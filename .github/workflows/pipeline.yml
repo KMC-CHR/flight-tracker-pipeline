@@ -37,13 +37,14 @@ jobs:
   # 2. LOCAL AI REVIEW (Runs in Parallel with Caching)
   # ---------------------------------------------------------------------------
   ai-code-review:
-    name: Local SLM Security Audit
+    name: AI PR Code Reviewer
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Setup Node.js runtime
         uses: actions/setup-node@v4
@@ -54,25 +55,39 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Cache Ollama Executable and Model
-        id: cache-ollama
-        uses: actions/cache@v4
-        with:
-          path: ~/.ollama
-          key: ollama-model-llama3.2-1b
-
       - name: Install & Run Ollama
         run: |
-          if [ ! -f /usr/local/bin/ollama ]; then
-            curl -fsSL https://ollama.com/install.sh | sh
-          fi
+          curl -fsSL [https://ollama.com/install.sh](https://ollama.com/install.sh) | sh
           ollama serve &
-          sleep 3
+          sleep 4
           ollama pull llama3.2:1b
 
-      - name: Execute SLM Diff Audit
-        run: node scripts/ai-audit.js
+      - name: Generate Inline Code Suggestions
+        run: node scripts/ai-pr-reviewer.js
 
+      - name: Post Inline Suggestions to PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('pr_comments.json')) return;
+
+            const comments = JSON.parse(fs.readFileSync('pr_comments.json', 'utf8'));
+            if (!comments || comments.length === 0) {
+              console.log('No inline comments to post.');
+              return;
+            }
+
+            // Post a structured PR Review with inline line comments
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              event: 'COMMENT',
+              comments: comments
+            });
   # ---------------------------------------------------------------------------
   # 3. INTEGRATION TESTS (Runs in Parallel)
   # ---------------------------------------------------------------------------
