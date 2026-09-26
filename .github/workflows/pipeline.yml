@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # 1. FAST QUALITY GATE: Deterministic Linting Check
+  # 1. FAST LINTING CHECK
   # ---------------------------------------------------------------------------
   quality-gate:
     name: Code Quality (ESLint)
@@ -34,11 +34,10 @@ jobs:
         run: npm run lint
 
   # ---------------------------------------------------------------------------
-  # 2. LOCAL AI CODE REVIEW: Fast Diff-Scoped SLM Security Audit
+  # 2. LOCAL AI REVIEW (Runs in Parallel with Caching)
   # ---------------------------------------------------------------------------
   ai-code-review:
     name: Local SLM Security Audit
-    needs: quality-gate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -55,22 +54,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Ollama & Pull Llama 3.2 (1B)
+      - name: Cache Ollama Executable and Model
+        id: cache-ollama
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama
+          key: ollama-model-llama3.2-1b
+
+      - name: Install & Run Ollama
         run: |
-          curl -fsSL https://ollama.com/install.sh | sh
+          if [ ! -f /usr/local/bin/ollama ]; then
+            curl -fsSL https://ollama.com/install.sh | sh
+          fi
           ollama serve &
-          sleep 4
+          sleep 3
           ollama pull llama3.2:1b
 
       - name: Execute SLM Diff Audit
         run: node scripts/ai-audit.js
 
   # ---------------------------------------------------------------------------
-  # 3. INTEGRATION TESTS: Live PostgreSQL Service Container
+  # 3. INTEGRATION TESTS (Runs in Parallel)
   # ---------------------------------------------------------------------------
   integration-tests:
     name: Integration Tests
-    needs: ai-code-review
     runs-on: ubuntu-latest
 
     services:
@@ -107,11 +114,11 @@ jobs:
         run: npm run test:integration
 
   # ---------------------------------------------------------------------------
-  # 4. CONTAINER BUILD: Docker Buildx with Layer Caching
+  # 4. CONTAINER BUILD (Runs only after all 3 quality checks pass)
   # ---------------------------------------------------------------------------
   build-container:
     name: Build & Cache Docker Image
-    needs: integration-tests
+    needs: [quality-gate, ai-code-review, integration-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
