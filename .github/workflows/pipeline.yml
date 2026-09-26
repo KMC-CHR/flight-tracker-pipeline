@@ -2,9 +2,9 @@ name: Production CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
   pull_request:
-    branches: [main, master]
+    branches: [master]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,17 +34,16 @@ jobs:
         run: npm run lint
 
   # ---------------------------------------------------------------------------
-  # 2. LOCAL AI REVIEW (Runs in Parallel with Caching)
+  # 2. LOCAL AI REVIEW (Runs on direct pushes to master)
   # ---------------------------------------------------------------------------
   ai-code-review:
-    name: AI PR Code Reviewer
-    if: github.event_name == 'pull_request'
+    name: Local SLM Security Audit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: Setup Node.js runtime
         uses: actions/setup-node@v4
@@ -57,41 +56,16 @@ jobs:
 
       - name: Install & Run Ollama
         run: |
-          curl -fsSL [https://ollama.com/install.sh](https://ollama.com/install.sh) | sh
+          curl -fsSL https://ollama.com/install.sh | sh
           ollama serve &
           sleep 4
           ollama pull llama3.2:1b
 
-      - name: Generate Inline Code Suggestions
-        run: node scripts/ai-pr-reviewer.js
+      - name: Execute SLM Diff Audit
+        run: node scripts/ai-audit.js
 
-      - name: Post Inline Suggestions to PR
-        uses: actions/github-script@v7
-        if: always()
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            if (!fs.existsSync('pr_comments.json')) return;
-
-            const comments = JSON.parse(fs.readFileSync('pr_comments.json', 'utf8'));
-            if (!comments || comments.length === 0) {
-              console.log('No inline comments to post.');
-              return;
-            }
-
-            // Post a structured PR Review with inline line comments
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              event: 'COMMENT',
-              comments: comments
-            });
-
-  #Nothing to see here
   # ---------------------------------------------------------------------------
-  # 3. INTEGRATION TESTS (Runs in Parallel)
+  # 3. INTEGRATION TESTS (Runs in parallel with AI Audit)
   # ---------------------------------------------------------------------------
   integration-tests:
     name: Integration Tests
@@ -131,7 +105,7 @@ jobs:
         run: npm run test:integration
 
   # ---------------------------------------------------------------------------
-  # 4. CONTAINER BUILD (Runs only after all 3 quality checks pass)
+  # 4. CONTAINER BUILD (Waits for quality gate, AI audit, and tests)
   # ---------------------------------------------------------------------------
   build-container:
     name: Build & Cache Docker Image
