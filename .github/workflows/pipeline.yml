@@ -34,7 +34,7 @@ jobs:
         run: npm run lint
 
   # ---------------------------------------------------------------------------
-  # 2. LOCAL AI CODE REVIEW: Zero third-party API dependencies
+  # 2. LOCAL AI CODE REVIEW: Fast Diff Scoped SLM Audit
   # ---------------------------------------------------------------------------
   ai-code-review:
     name: Local AI PR Audit
@@ -44,29 +44,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
-      - name: Install Ollama
-        run: curl -fsSL https://ollama.com/install.sh | sh
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
-      - name: Start Ollama & Pull Llama 3.2 (1B)
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Ollama & Pull Llama 3.2 (1B)
         run: |
+          curl -fsSL https://ollama.com/install.sh | sh
           ollama serve &
-          sleep 5
+          sleep 4
           ollama pull llama3.2:1b
 
-      - name: Run Audit on Git Diff
-        run: |
-          DIFF_DATA=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.js')
-          
-          if [ -z "$DIFF_DATA" ]; then
-            echo "No relevant code changes detected."
-            exit 0
-          fi
-
-          PROMPT="You are an automated security auditor in a CI pipeline. Audit this git diff for bugs, missing error handling, or security risks. Keep the response under 4 concise bullet points. Git Diff:\n\n$DIFF_DATA"
-          
-          echo "$PROMPT" | ollama run llama3.2:1b > audit_review.txt
+      - name: Run SLM Audit Script
+        run: node scripts/ai-audit.js > audit_review.txt
 
       - name: Post Audit Comment to PR
         uses: actions/github-script@v7
@@ -76,13 +73,15 @@ jobs:
             const fs = require('fs');
             if (fs.existsSync('audit_review.txt')) {
               const reviewText = fs.readFileSync('audit_review.txt', 'utf8');
-              const body = `### 🛡️ Local AI Security & Quality Check\n\n${reviewText}`;
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: body
-              });
+              if (reviewText.trim()) {
+                const body = `### 🛡️ Local AI Security & Quality Check\n\n${reviewText}`;
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: body
+                });
+              }
             }
 
   # ---------------------------------------------------------------------------
