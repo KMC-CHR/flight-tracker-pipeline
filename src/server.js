@@ -220,7 +220,7 @@ export function buildServer() {
                 data: fallbackData
             });
 
-        } catch (error) {
+        } catch {
             const fallbackData = generateFallbackFlights(35);
             return reply.status(200).send({
                 timestamp: new Date().toISOString(),

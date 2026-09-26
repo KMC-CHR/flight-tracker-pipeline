@@ -10,7 +10,7 @@ export async function checkDatabaseConnection() {
         const client = await pool.connect();
         client.release();
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }
