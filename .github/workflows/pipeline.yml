@@ -1,0 +1,150 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. QUALITY GATE: Linting
+  # ---------------------------------------------------------------------------
+  quality-gate:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Linter
+        run: npm run lint
+
+  # ---------------------------------------------------------------------------
+  # 2. LOCAL AI CODE REVIEW: Zero third-party API dependencies
+  # ---------------------------------------------------------------------------
+  ai-code-review:
+    name: Local AI PR Audit
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama & Pull Llama 3.2 (1B)
+        run: |
+          ollama serve &
+          sleep 5
+          ollama pull llama3.2:1b
+
+      - name: Run Audit on Git Diff
+        run: |
+          DIFF_DATA=$(git diff origin/${{ github.base_ref }}...HEAD -- '*.js')
+          
+          if [ -z "$DIFF_DATA" ]; then
+            echo "No relevant code changes detected."
+            exit 0
+          fi
+
+          PROMPT="You are an automated security auditor in a CI pipeline. Audit this git diff for bugs, missing error handling, or security risks. Keep the response under 4 concise bullet points. Git Diff:\n\n$DIFF_DATA"
+          
+          echo "$PROMPT" | ollama run llama3.2:1b > audit_review.txt
+
+      - name: Post Audit Comment to PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('audit_review.txt')) {
+              const reviewText = fs.readFileSync('audit_review.txt', 'utf8');
+              const body = `### 🛡️ Local AI Security & Quality Check\n\n${reviewText}`;
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+
+  # ---------------------------------------------------------------------------
+  # 3. INTEGRATION TESTS: Live PostgreSQL Service Container
+  # ---------------------------------------------------------------------------
+  integration-tests:
+    name: Integration Tests
+    needs: quality-gate
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: app_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Integration Tests
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/app_test
+        run: npm run test:integration
+
+  # ---------------------------------------------------------------------------
+  # 4. CONTAINER BUILD: Docker Buildx with Layer Caching
+  # ---------------------------------------------------------------------------
+  build-container:
+    name: Build & Cache Docker Image
+    needs: integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (dry-run with cache)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: app/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
