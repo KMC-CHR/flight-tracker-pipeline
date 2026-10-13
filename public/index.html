@@ -3,16 +3,20 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroPulse Command</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AeroPulse Concierge - Tactical Telemetry</title>
 
+    <!-- Google Fonts for Playfair Display, Plus Jakarta Sans, and JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 
+    <!-- Barcode rendering library for standard IATA barcode output -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.12.3/dist/JsBarcode.all.min.js"></script>
+
+    <!-- Tailwind CSS framework -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <script>
@@ -21,25 +25,22 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Satoshi', 'sans-serif'],
-                        heading: ['Poppins', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
-                        slate: {
-                            950: '#030712',
-                            900: '#0B0F19',
-                            850: '#111827',
-                            800: '#1F2937',
-                            700: '#374151',
-                            400: '#9CA3AF',
+                        gold: {
+                            400: '#D4AF37',
+                            500: '#C5A059',
+                            600: '#B08938',
                         },
-                        brand: {
-                            cyan: '#06B6D4',
-                            purple: '#A855F7',
-                            amber: '#F59E0B',
-                            emerald: '#10B981',
-                            rose: '#F43F5E'
+                        warm: {
+                            50: '#FAF8F5',
+                            100: '#F3EFEA',
+                            800: '#2A2421',
+                            900: '#1A1614',
+                            950: '#0F0D0C'
                         }
                     }
                 }
@@ -48,93 +49,65 @@
     </script>
 
     <style>
+        /* Base surface and smooth theme transitions */
         body {
-            font-family: 'Satoshi', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FAF8F5;
+            color: #1A1614;
             transition: background-color 0.25s ease, color 0.25s ease;
+            touch-action: manipulation;
         }
 
-        :root {
-            --map-land-fill: #E2E8F0;
-            --map-land-stroke: #94A3B8;
+        .dark body {
+            background-color: #0F0D0C;
+            color: #F3EFEA;
         }
 
-        .dark {
-            --map-land-fill: #1E293B;
-            --map-land-stroke: #475569;
+        /* Glassmorphic luxury panels */
+        .luxury-panel {
+            background-color: rgba(250, 248, 245, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            box-shadow: 0 12px 32px -8px rgba(42, 36, 33, 0.08);
         }
 
-        .map-vector-layer {
-            mask-image: url('./world.svg');
-            -webkit-mask-image: url('./world.svg');
-            mask-size: contain;
-            -webkit-mask-size: contain;
-            mask-repeat: no-repeat;
-            -webkit-mask-repeat: no-repeat;
-            mask-position: center;
-            -webkit-mask-position: center;
-            background-color: var(--map-land-fill);
-            border: 1px solid var(--map-land-stroke);
-            transition: background-color 0.25s ease, border-color 0.25s ease;
+        .dark .luxury-panel {
+            background-color: rgba(26, 22, 20, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
         }
 
-        .glass-dock {
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-        }
-
-        .dark .glass-dock {
-            background: rgba(11, 15, 25, 0.78);
-        }
-
-        /* Ticket Card Base */
+        /* Ticket modal surface */
         .ticket-card {
-            background: #FAFAFA;
-            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.18));
+            background-color: #FFFFFF;
+            border: 1px solid #E2D9CC;
+            box-shadow: 0 24px 48px -12px rgba(42, 36, 33, 0.12);
         }
 
         .dark .ticket-card {
-            background: #0F172A;
-            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.65));
+            background-color: #1A1614;
+            border: 1px solid #3A322D;
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.7);
         }
 
-        /* Precise Notch Cutouts - Aligned Perfectly with Tear Line */
-        .ticket-notch-left {
+        /* Simulated ticket side notches */
+        .ticket-notch {
             position: absolute;
-            left: -9px;
-            bottom: 73px;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background-color: #F1F5F9;
+            background-color: #FAF8F5;
             z-index: 40;
         }
 
-        .dark .ticket-notch-left {
-            background-color: #030712;
+        .dark .ticket-notch {
+            background-color: #0F0D0C;
         }
 
-        .ticket-notch-right {
-            position: absolute;
-            right: -9px;
-            bottom: 73px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background-color: #F1F5F9;
-            z-index: 40;
-        }
-
-        .dark .ticket-notch-right {
-            background-color: #030712;
-        }
-
-        .drawer-slide {
-            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-        }
-
+        /* Custom scrollbar styling */
         ::-webkit-scrollbar {
-            width: 3px;
+            width: 4px;
         }
 
         ::-webkit-scrollbar-track {
@@ -142,299 +115,287 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #1F2937;
+            background: #C5A059;
             border-radius: 2px;
         }
     </style>
 </head>
 
-<body
-    class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 h-screen w-screen overflow-hidden antialiased select-none relative transition-colors duration-200">
+<body class="h-screen w-screen overflow-hidden antialiased select-none relative">
 
-    <!-- FULLSCREEN MAP CANVAS CONTAINER -->
-    <main
-        class="absolute inset-0 w-full h-full bg-slate-100 dark:bg-slate-950 overflow-hidden transition-colors duration-200">
-
-        <!-- VECTOR MAP LAYER -->
-        <div class="map-vector-layer absolute inset-0 w-full h-full p-4 pointer-events-none opacity-90"></div>
-
-        <!-- REFINED BACKGROUND RADAR STITCH GRID -->
-        <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-60 dark:opacity-40"
-            xmlns="http://www.w3.org/2000/svg">
-            <g stroke="currentColor" class="text-slate-400 dark:text-slate-700" stroke-width="0.8"
-                stroke-dasharray="3 6">
-                <line x1="0" y1="15%" x2="100%" y2="15%" />
-                <line x1="0" y1="30%" x2="100%" y2="30%" />
-                <line x1="0" y1="45%" x2="100%" y2="45%" />
-                <line x1="0" y1="60%" x2="100%" y2="60%" />
-                <line x1="0" y1="75%" x2="100%" y2="75%" />
-                <line x1="0" y1="90%" x2="100%" y2="90%" />
-                <line x1="15%" y1="0" x2="15%" y2="100%" />
-                <line x1="30%" y1="0" x2="30%" y2="100%" />
-                <line x1="45%" y1="0" x2="45%" y2="100%" />
-                <line x1="60%" y1="0" x2="60%" y2="100%" />
-                <line x1="75%" y1="0" x2="75%" y2="100%" />
-                <line x1="90%" y1="0" x2="90%" y2="100%" />
-            </g>
-        </svg>
-
-        <!-- INTERACTIVE CANVAS FLIGHT LAYER -->
-        <canvas id="mapCanvas" class="absolute inset-0 w-full h-full cursor-pointer z-10"></canvas>
+    <!-- MAP CONTAINER -->
+    <main class="absolute inset-0 w-full h-full flex items-center justify-center p-2 sm:p-4">
+        <div id="mapWrapper" class="relative w-full h-full flex items-center justify-center">
+            <!-- World map base graphic -->
+            <img id="mapImage" src="./world.svg"
+                class="w-full h-full object-contain pointer-events-none opacity-85 dark:opacity-35 transition-opacity"
+                alt="World Map">
+            <!-- Interactive HTML5 Canvas overlay for flight paths and icons -->
+            <canvas id="mapCanvas" class="absolute cursor-pointer z-10"></canvas>
+        </div>
     </main>
 
-    <!-- BRAND TOP LEFT WATERMARK -->
-    <div class="absolute top-6 left-6 z-20 pointer-events-none">
-        <h1 class="text-xs font-bold font-heading text-slate-900 dark:text-white tracking-widest uppercase">AeroPulse
-            <span class="font-normal text-slate-500">Tactical</span>
-        </h1>
-        <p class="text-[9px] font-mono text-slate-500 dark:text-slate-400">GLOBAL FLIGHT TRACKING NETWORK</p>
-    </div>
-
-    <!-- TOP RIGHT MODE & PLAY CONTROLS -->
-    <div class="absolute top-6 right-6 z-20 flex items-center space-x-2">
-        <button id="themeToggleBtn" aria-label="Toggle Theme"
-            class="p-2.5 rounded-lg glass-dock border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-lg">
-            <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-            </svg>
-            <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-        </button>
-
-        <button id="pauseToggleBtn" aria-label="Pause Simulation"
-            class="p-2.5 rounded-lg glass-dock border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-lg">
-            <svg id="pauseIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </button>
-    </div>
-
-    <!-- REFINED PHYSICAL BOARDING TICKET -->
-    <aside id="inspectorDrawer"
-        class="hidden drawer-slide opacity-0 translate-x-12 fixed top-6 right-6 w-[350px] z-30 rounded-2xl ticket-card border border-slate-300/80 dark:border-slate-800/80 overflow-hidden flex flex-col justify-between select-none">
-
-        <!-- Side Tear Notch Cutouts -->
-        <div class="ticket-notch-left"></div>
-        <div class="ticket-notch-right"></div>
-
-        <!-- TICKET HEADER STRIP -->
-        <div class="border-b-2 border-slate-900 dark:border-brand-cyan">
-            <div class="px-5 py-3 bg-slate-100 dark:bg-slate-900 flex items-center justify-between">
-                <span
-                    class="text-[10px] font-mono font-bold tracking-widest uppercase text-slate-800 dark:text-slate-200">BOARDING
-                    PASS</span>
-                <button id="closeDrawerBtn" aria-label="Close Ticket"
-                    class="p-1 rounded text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+    <!-- HEADER BRANDING AND TOP CONTROLS -->
+    <header
+        class="absolute top-3 sm:top-6 left-3 sm:left-6 right-3 sm:right-6 z-20 flex items-center justify-between pointer-events-none">
+        <div
+            class="pointer-events-auto luxury-panel px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl flex items-center space-x-2.5 sm:space-x-3">
+            <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-gold-500"></div>
+            <div>
+                <h1
+                    class="text-[11px] sm:text-xs font-serif font-bold tracking-widest uppercase text-warm-900 dark:text-warm-50">
+                    AeroPulse <span class="font-sans font-normal text-gold-500">Concierge</span></h1>
+                <p
+                    class="hidden sm:block text-[9px] font-mono tracking-wider text-warm-800/60 dark:text-warm-100/50 uppercase">
+                    Private Flight Intelligence</p>
             </div>
         </div>
 
-        <!-- AIRLINE & CALLSIGN SECTION -->
-        <div class="p-5 pb-3">
+        <div class="pointer-events-auto flex items-center space-x-1.5 sm:space-x-2">
+            <!-- Focus Mode Button -->
+            <button id="focusModeBtn" aria-label="Toggle Path Focus Mode" title="Toggle Path Focus Mode"
+                class="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl luxury-panel text-warm-800 dark:text-warm-100 hover:text-gold-500 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            </button>
+
+            <!-- Pause / Play Simulation Button -->
+            <button id="pauseToggleBtn" aria-label="Pause Simulation" title="Pause Simulation"
+                class="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl luxury-panel text-warm-800 dark:text-warm-100 hover:text-gold-500 transition">
+                <svg id="pauseIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </button>
+
+            <!-- Dark / Light Theme Toggle Button -->
+            <button id="themeToggleBtn" aria-label="Toggle Theme" title="Toggle Theme"
+                class="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl luxury-panel text-warm-800 dark:text-warm-100 hover:text-gold-500 transition">
+                <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- FLIGHT TELEMETRY DRAWER / BOARDING CARD -->
+    <aside id="inspectorDrawer"
+        class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:top-20 sm:bottom-auto w-auto sm:w-80 md:w-96 max-h-[80vh] sm:max-h-[85vh] overflow-y-auto z-30 ticket-card rounded-2xl flex flex-col justify-between select-none shadow-2xl">
+        <div
+            class="ticket-notch -left-2.5 bottom-[104px] border-r border-warm-100 dark:border-warm-800 hidden sm:block">
+        </div>
+        <div
+            class="ticket-notch -right-2.5 bottom-[104px] border-l border-warm-100 dark:border-warm-800 hidden sm:block">
+        </div>
+
+        <!-- Top Header for Airline / Operator Info -->
+        <div
+            class="bg-warm-900 text-warm-50 px-5 py-3.5 flex items-center justify-between border-b border-gold-500/30 sticky top-0 z-10">
+            <div class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-gold-400"></span>
+                <span id="ticketCarrier"
+                    class="text-xs font-serif font-bold tracking-widest uppercase text-gold-400">EMIRATES
+                    EXECUTIVE</span>
+            </div>
+            <button id="closeDrawerBtn" aria-label="Close Panel"
+                class="text-warm-100/60 hover:text-white transition p-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Body Content for Route and Aircraft Status -->
+        <div class="p-5 space-y-4">
             <div class="flex items-start justify-between">
                 <div>
-                    <p id="ticketCarrier"
-                        class="text-[10px] font-mono font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">
-                        EMIRATES AIRWAYS</p>
+                    <span
+                        class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest block">TAIL
+                        / CALLSIGN</span>
                     <h2 id="inspectCallsign"
-                        class="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-white mt-0.5">
-                        --</h2>
+                        class="text-xl font-serif font-bold text-warm-900 dark:text-warm-50 mt-0.5">UAE-091</h2>
                 </div>
                 <div class="text-right">
-                    <span class="text-[9px] font-mono text-slate-400 uppercase block">FLIGHT STATUS</span>
-                    <span id="ticketStatusText"
-                        class="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">IN-FLIGHT</span>
+                    <span
+                        class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest block">RECORD
+                        REF</span>
+                    <span id="ticketPnr"
+                        class="text-xs font-mono font-semibold text-gold-600 dark:text-gold-400">EX99LX</span>
                 </div>
             </div>
 
-            <!-- ROUTE DISCLOSURE WITH INLINE AIRPLANE -->
-            <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div class="text-left min-w-[70px]">
-                    <p class="text-[9px] font-mono text-slate-400 uppercase">ORIGIN</p>
+            <!-- Route Details -->
+            <div class="py-3 border-y border-warm-100 dark:border-warm-800 flex items-center justify-between">
+                <div>
+                    <p class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest">
+                        ORIGIN</p>
                     <p id="ticketOriginCode"
-                        class="text-2xl font-bold font-mono text-slate-900 dark:text-white leading-none mt-1">LAX</p>
-                    <p id="ticketOriginCity"
-                        class="text-[10px] font-sans font-medium text-slate-500 dark:text-slate-400 mt-1">Los Angeles
+                        class="text-xl font-serif font-bold text-warm-900 dark:text-warm-50 leading-none mt-1">DXB</p>
+                    <p id="ticketOriginCity" class="text-xs font-sans text-warm-800/80 dark:text-warm-100/80 mt-1">Dubai
                     </p>
                 </div>
 
-                <!-- INLINE AIRPLANE DASHED ROUTE -->
-                <div class="flex-1 px-3 flex flex-col items-center justify-center">
-                    <div class="w-full flex items-center justify-center space-x-1 my-1">
-                        <div class="flex-1 border-b border-dashed border-slate-400 dark:border-slate-600"></div>
-                        <svg class="w-3.5 h-3.5 text-slate-800 dark:text-slate-200 transform rotate-90 shrink-0"
-                            fill="currentColor" viewBox="0 0 24 24">
+                <div class="flex-1 px-3 flex flex-col items-center">
+                    <div class="w-full flex items-center space-x-1">
+                        <div class="flex-1 border-b border-dashed border-gold-500/40"></div>
+                        <svg class="w-3.5 h-3.5 text-gold-500 transform rotate-90" fill="currentColor"
+                            viewBox="0 0 24 24">
                             <path
                                 d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
                         </svg>
-                        <div class="flex-1 border-b border-dashed border-slate-400 dark:border-slate-600"></div>
+                        <div class="flex-1 border-b border-dashed border-gold-500/40"></div>
                     </div>
-                    <span id="ticketFlightTime" class="text-[9px] font-mono text-slate-400 mt-0.5">05H 40M</span>
+                    <span id="ticketFlightTime"
+                        class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 mt-1">05H 40M</span>
                 </div>
 
-                <div class="text-right min-w-[70px]">
-                    <p class="text-[9px] font-mono text-slate-400 uppercase">DESTINATION</p>
+                <div class="text-right">
+                    <p class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest">
+                        DESTINATION</p>
                     <p id="ticketDestCode"
-                        class="text-2xl font-bold font-mono text-slate-900 dark:text-white leading-none mt-1">CDG</p>
-                    <p id="ticketDestCity"
-                        class="text-[10px] font-sans font-medium text-slate-500 dark:text-slate-400 mt-1">Paris</p>
+                        class="text-xl font-serif font-bold text-warm-900 dark:text-warm-50 leading-none mt-1">SIN</p>
+                    <p id="ticketDestCity" class="text-xs font-sans text-warm-800/80 dark:text-warm-100/80 mt-1">
+                        Singapore</p>
                 </div>
             </div>
 
-            <!-- CLEAN TYPOGRAPHIC METRICS GRID -->
+            <!-- Telemetry Parameters -->
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                    <span
+                        class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest block">ALTITUDE</span>
+                    <span id="ticketAlt" class="font-mono font-semibold text-warm-900 dark:text-warm-100">38,000
+                        ft</span>
+                </div>
+                <div>
+                    <span
+                        class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest block">VELOCITY</span>
+                    <span id="ticketSpeed" class="font-mono font-semibold text-warm-900 dark:text-warm-100">485
+                        kts</span>
+                </div>
+                <div>
+                    <span
+                        class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest block">AIRSPACE
+                        STATUS</span>
+                    <span id="ticketStatusText"
+                        class="font-mono font-bold text-gold-600 dark:text-gold-400">IN-FLIGHT</span>
+                </div>
+                <div>
+                    <span
+                        class="text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest block">TRANSPONDER</span>
+                    <span id="ticketSquawk" class="font-mono font-semibold text-warm-900 dark:text-warm-100">7712</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barcode Container -->
+        <div
+            class="px-5 py-3 border-t border-dashed border-warm-100 dark:border-warm-800 bg-warm-50/50 dark:bg-warm-900/50">
             <div
-                class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-y-4 gap-x-6 text-xs">
-                <div>
-                    <span class="text-[9px] font-mono text-slate-400 uppercase block tracking-wider">ALTITUDE</span>
-                    <span id="ticketAlt"
-                        class="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm mt-0.5 block">--</span>
-                </div>
-                <div>
-                    <span class="text-[9px] font-mono text-slate-400 uppercase block tracking-wider">VELOCITY</span>
-                    <span id="ticketSpeed"
-                        class="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm mt-0.5 block">--</span>
-                </div>
-                <div>
-                    <span class="text-[9px] font-mono text-slate-400 uppercase block tracking-wider">GATE / ZONE</span>
-                    <span id="ticketGate"
-                        class="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm mt-0.5 block">B-12</span>
-                </div>
-                <div>
-                    <span class="text-[9px] font-mono text-slate-400 uppercase block tracking-wider">SEAT / CLASS</span>
-                    <span id="ticketSeat"
-                        class="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm mt-0.5 block">04A /
-                        FIRST</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- PERFORATED TEAR DOTTED LINE -->
-        <div class="relative w-full my-1">
-            <div class="border-b-2 border-dashed border-slate-300 dark:border-slate-700 w-full"></div>
-        </div>
-
-        <!-- TICKET FOOTER WITH BARCODE -->
-        <div class="p-5 pt-2 space-y-2">
-            <div class="flex items-center justify-between text-[9px] font-mono text-slate-500 dark:text-slate-400">
-                <span>PASSENGER: TELEMETRY FEED</span>
-                <span id="ticketSquawk">SQUAWK 4465</span>
+                class="flex items-center justify-between text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 mb-1.5">
+                <span>PASSENGER MANIFEST</span>
+                <span>IATA BCBP M1</span>
             </div>
 
-            <!-- Authentic Dense Barcode -->
-            <div class="w-full flex items-center justify-center opacity-85 pt-1">
-                <svg class="h-9 w-full stroke-slate-900 dark:stroke-slate-100" viewBox="0 0 200 30" fill="none"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <line x1="2" y1="0" x2="2" y2="30" stroke-width="2" />
-                    <line x1="5" y1="0" x2="5" y2="30" stroke-width="1" />
-                    <line x1="9" y1="0" x2="9" y2="30" stroke-width="3" />
-                    <line x1="15" y1="0" x2="15" y2="30" stroke-width="1" />
-                    <line x1="20" y1="0" x2="20" y2="30" stroke-width="2" />
-                    <line x1="26" y1="0" x2="26" y2="30" stroke-width="4" />
-                    <line x1="32" y1="0" x2="32" y2="30" stroke-width="1" />
-                    <line x1="38" y1="0" x2="38" y2="30" stroke-width="2" />
-                    <line x1="45" y1="0" x2="45" y2="30" stroke-width="3" />
-                    <line x1="51" y1="0" x2="51" y2="30" stroke-width="1" />
-                    <line x1="57" y1="0" x2="57" y2="30" stroke-width="2" />
-                    <line x1="65" y1="0" x2="65" y2="30" stroke-width="4" />
-                    <line x1="71" y1="0" x2="71" y2="30" stroke-width="1" />
-                    <line x1="77" y1="0" x2="77" y2="30" stroke-width="2" />
-                    <line x1="85" y1="0" x2="85" y2="30" stroke-width="3" />
-                    <line x1="91" y1="0" x2="91" y2="30" stroke-width="1" />
-                    <line x1="99" y1="0" x2="99" y2="30" stroke-width="2" />
-                    <line x1="105" y1="0" x2="105" y2="30" stroke-width="4" />
-                    <line x1="113" y1="0" x2="113" y2="30" stroke-width="1" />
-                    <line x1="119" y1="0" x2="119" y2="30" stroke-width="2" />
-                    <line x1="127" y1="0" x2="127" y2="30" stroke-width="3" />
-                    <line x1="135" y1="0" x2="135" y2="30" stroke-width="1" />
-                    <line x1="141" y1="0" x2="141" y2="30" stroke-width="2" />
-                    <line x1="149" y1="0" x2="149" y2="30" stroke-width="4" />
-                    <line x1="157" y1="0" x2="157" y2="30" stroke-width="1" />
-                    <line x1="163" y1="0" x2="163" y2="30" stroke-width="2" />
-                    <line x1="171" y1="0" x2="171" y2="30" stroke-width="3" />
-                    <line x1="177" y1="0" x2="177" y2="30" stroke-width="1" />
-                    <line x1="185" y1="0" x2="185" y2="30" stroke-width="2" />
-                    <line x1="193" y1="0" x2="193" y2="30" stroke-width="4" />
-                </svg>
+            <div
+                class="w-full max-w-[220px] mx-auto flex justify-center items-center bg-white p-1.5 rounded-lg border border-warm-100 shadow-sm">
+                <svg id="barcodeCanvas" class="w-full h-8"></svg>
             </div>
+            <p id="barcodeDataText"
+                class="text-[8px] font-mono text-warm-800/60 dark:text-warm-100/60 text-center mt-1 truncate">
+                M1TELEMETRY/FEED EX99LX DXBSIN UAE091</p>
         </div>
     </aside>
 
-    <!-- FLOATING BOTTOM DOCK -->
+    <!-- BOTTOM CONTROL DOCK -->
     <div
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-6xl h-24 rounded-2xl glass-dock border border-slate-200/80 dark:border-slate-800/80 p-4 z-20 flex items-center justify-between shadow-2xl">
-
-        <div class="flex items-center space-x-4 pr-6 border-r border-slate-200 dark:border-slate-800/80">
+        class="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 luxury-panel rounded-xl sm:rounded-2xl px-4 sm:px-6 py-2.5 sm:py-3.5 z-20 flex items-center justify-center space-x-4 sm:space-x-8 shadow-2xl text-xs max-w-[92vw] sm:max-w-none">
+        <div
+            class="flex items-center space-x-3 sm:space-x-6 pr-3 sm:pr-6 border-r border-warm-100 dark:border-warm-800">
             <div>
-                <p class="text-[9px] font-mono text-slate-500 uppercase tracking-wider">Airspace Volume</p>
-                <p id="totalVolumeText" class="text-lg font-bold font-mono text-slate-900 dark:text-white">--</p>
+                <p
+                    class="text-[8px] sm:text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest">
+                    Active Airspace</p>
+                <p id="totalVolumeText" class="font-mono font-bold text-warm-900 dark:text-warm-50 text-xs sm:text-sm">
+                    --</p>
             </div>
-            <div class="h-10 flex items-end space-x-1">
-                <div class="w-1.5 bg-slate-200 dark:bg-slate-800 rounded-t h-[40%]"></div>
-                <div class="w-1.5 bg-slate-200 dark:bg-slate-800 rounded-t h-[55%]"></div>
-                <div class="w-1.5 bg-slate-200 dark:bg-slate-800 rounded-t h-[70%]"></div>
-                <div class="w-1.5 bg-slate-200 dark:bg-slate-800 rounded-t h-[60%]"></div>
-                <div class="w-1.5 bg-slate-200 dark:bg-slate-800 rounded-t h-[85%]"></div>
-                <div class="w-1.5 bg-brand-cyan rounded-t h-[100%]"></div>
-                <div class="w-1.5 bg-slate-200 dark:bg-slate-800 rounded-t h-[75%]"></div>
-                <div class="w-1.5 bg-slate-200 dark:bg-slate-800 rounded-t h-[50%]"></div>
+            <div>
+                <p
+                    class="text-[8px] sm:text-[9px] font-mono text-warm-800/60 dark:text-warm-100/70 uppercase tracking-widest">
+                    On-Ground</p>
+                <p id="delayCountText" class="font-mono font-bold text-gold-600 dark:text-gold-400 text-xs sm:text-sm">
+                    --</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-6 px-6 border-r border-slate-200 dark:border-slate-800/80">
-            <div>
-                <p class="text-[9px] font-mono text-slate-500 uppercase">On-Ground</p>
-                <p id="delayCountText" class="text-sm font-bold font-mono text-brand-amber mt-0.5">--</p>
-            </div>
-            <div>
-                <p class="text-[9px] font-mono text-slate-500 uppercase">Ingestion</p>
-                <p class="text-sm font-bold font-mono text-slate-900 dark:text-white mt-0.5">1,296 <span
-                        class="text-[9px] font-normal text-slate-400 dark:text-slate-500">v/s</span></p>
-            </div>
-            <div>
-                <p class="text-[9px] font-mono text-slate-500 uppercase">Link Health</p>
-                <p class="text-sm font-bold font-mono text-brand-emerald mt-0.5">99.8%</p>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-2 pl-6">
-            <span class="text-[9px] font-mono text-slate-500 uppercase tracking-wider mr-2">Filter</span>
+        <!-- Airspace Filter Buttons -->
+        <div class="flex items-center space-x-1 sm:space-x-2">
             <button
-                class="filter-btn active px-3 py-1.5 rounded-lg bg-brand-cyan/20 border border-brand-cyan/50 text-brand-cyan text-xs font-mono transition"
+                class="filter-btn active px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-gold-500/15 border border-gold-500/30 font-mono font-medium text-[11px] sm:text-xs text-gold-600 dark:text-gold-400 transition"
                 data-filter="all">All</button>
             <button
-                class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-mono transition"
-                data-filter="On-Ground">Ground</button>
+                class="filter-btn px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800/50 font-mono text-[11px] sm:text-xs text-warm-800/70 dark:text-warm-100/60 transition"
+                data-filter="In-Flight">Airborne</button>
             <button
-                class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs font-mono transition"
-                data-filter="In-Flight">In-Flight</button>
+                class="filter-btn px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl hover:bg-warm-100 dark:hover:bg-warm-800/50 font-mono text-[11px] sm:text-xs text-warm-800/70 dark:text-warm-100/60 transition"
+                data-filter="On-Ground">Ground</button>
         </div>
-
     </div>
 
     <script>
+        // Store flight telemetry records
         let flights = [];
         const canvas = document.getElementById('mapCanvas');
         const ctx = canvas.getContext('2d');
+        const mapImg = document.getElementById('mapImage');
 
+        // Application state variables
         let isRunning = true;
         let selectedFlight = null;
         let activeFilter = 'all';
+        let isFocusMode = false;
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        // Convert normalized coordinates to canvas pixels
+        function projectCoords(normCoords, width, height) {
+            const rawX = normCoords[0];
+            const rawY = normCoords[1];
+            const x = rawX * width;
+            const y = (0.512 + (rawY - 0.5) * 0.72) * height;
+            return [x, y];
         }
+
+        // Adjust canvas dimensions and account for Device Pixel Ratio (DPI scaling for Retina/Mobile displays)
+        function resizeCanvas() {
+            const rect = mapImg.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+            canvas.style.left = `${mapImg.offsetLeft}px`;
+            canvas.style.top = `${mapImg.offsetTop}px`;
+
+            ctx.scale(dpr, dpr);
+            if (!isRunning) render();
+        }
+
+        mapImg.addEventListener('load', resizeCanvas);
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
+        // Fetch live flight data from backend API
         async function fetchLiveFlights() {
             try {
                 const response = await fetch('/api/live-flights');
@@ -442,20 +403,21 @@
 
                 if (result.data && result.data.length > 0) {
                     flights = result.data;
-                    document.getElementById('totalVolumeText').innerHTML = `${result.total_active} <span class="text-[10px] font-normal text-brand-emerald">LIVE</span>`;
+                    document.getElementById('totalVolumeText').innerText = result.total_active;
                     const onGroundCount = flights.filter(f => f.status === 'On-Ground').length;
-                    document.getElementById('delayCountText').innerText = `${onGroundCount} flights`;
+                    document.getElementById('delayCountText').innerText = onGroundCount;
 
                     if (!isRunning) render();
                 }
             } catch (err) {
-                console.error('Failed to sync live telemetry stream:', err);
+                console.error('Failed to fetch flight telemetry:', err);
             }
         }
 
         fetchLiveFlights();
         setInterval(fetchLiveFlights, 15000);
 
+        // Calculate quadratic Bezier points for smooth flight arcs
         function evaluateQuadraticBezier(p0, p1, p2, t) {
             const oneMinusT = 1 - t;
             return [
@@ -464,10 +426,10 @@
             ];
         }
 
+        // Calculate control point for curved flight trajectory
         function getControlPoint(p0, p2) {
             const midX = (p0[0] + p2[0]) / 2;
             const midY = (p0[1] + p2[1]) / 2;
-
             const dx = p2[0] - p0[0];
             const dy = p2[1] - p0[1];
             const dist = Math.hypot(dx, dy);
@@ -476,7 +438,7 @@
 
             const normX = -dy / dist;
             const normY = dx / dist;
-            const curveAmount = dist * 0.15;
+            const curveAmount = dist * 0.12;
 
             return [
                 midX + normX * curveAmount,
@@ -484,59 +446,52 @@
             ];
         }
 
-        function drawAirplane(ctx, x, y, angle, color) {
+        // Render airplane graphic onto canvas
+        function drawAirplane(ctx, x, y, angle, isSelected, isDark) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle + Math.PI / 2);
-            ctx.fillStyle = color || '#0F172A';
-            ctx.shadowColor = color || 'rgba(8, 145, 178, 0.6)';
-            ctx.shadowBlur = 6;
+
+            ctx.fillStyle = isSelected ? '#C5A059' : (isDark ? '#E2D9CC' : '#2A2421');
 
             ctx.beginPath();
-            ctx.moveTo(0, -8);
+            ctx.moveTo(0, -6);
             ctx.lineTo(2, -2);
-            ctx.lineTo(8, 2);
-            ctx.lineTo(8, 4);
+            ctx.lineTo(6, 2);
+            ctx.lineTo(6, 3);
             ctx.lineTo(2, 2);
-            ctx.lineTo(1, 7);
-            ctx.lineTo(3, 9);
-            ctx.lineTo(3, 10);
-            ctx.lineTo(0, 9);
-            ctx.lineTo(-3, 10);
-            ctx.lineTo(-3, 9);
-            ctx.lineTo(-1, 7);
+            ctx.lineTo(1, 5);
+            ctx.lineTo(2, 7);
+            ctx.lineTo(2, 8);
+            ctx.lineTo(0, 7);
+            ctx.lineTo(-2, 8);
+            ctx.lineTo(-2, 7);
+            ctx.lineTo(-1, 5);
             ctx.lineTo(-2, 2);
-            ctx.lineTo(-8, 4);
-            ctx.lineTo(-8, 2);
+            ctx.lineTo(-6, 3);
+            ctx.lineTo(-6, 2);
             ctx.lineTo(-2, -2);
             ctx.closePath();
             ctx.fill();
             ctx.restore();
         }
 
+        // Main animation rendering loop
         function render() {
             const isDark = document.documentElement.classList.contains('dark');
-            const w = canvas.width;
-            const h = canvas.height;
+            const rect = mapImg.getBoundingClientRect();
+            const w = rect.width;
+            const h = rect.height;
 
             ctx.clearRect(0, 0, w, h);
 
             flights.forEach(f => {
                 if (activeFilter !== 'all' && f.status !== activeFilter) return;
 
-                const p0 = [f.start[0] * w, f.start[1] * h];
-                const p2 = [f.end[0] * w, f.end[1] * h];
-                const p1 = [getControlPoint(f.start, f.end)[0] * w, getControlPoint(f.start, f.end)[1] * h];
-
-                ctx.save();
-                ctx.strokeStyle = f.status === 'On-Ground' ? 'rgba(245, 158, 11, 0.6)' : (isDark ? 'rgba(6, 182, 212, 0.5)' : 'rgba(8, 145, 178, 0.6)');
-                ctx.lineWidth = 1.2;
-                ctx.setLineDash([3, 3]);
-                ctx.beginPath();
-                ctx.moveTo(p0[0], p0[1]);
-                ctx.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]);
-                ctx.stroke();
-                ctx.restore();
+                const isSelected = selectedFlight && selectedFlight.id === f.id;
+                const p0 = projectCoords(f.start, w, h);
+                const p2 = projectCoords(f.end, w, h);
+                const p1 = getControlPoint(p0, p2);
 
                 if (isRunning) {
                     f.progress += f.speedVal || 0.0006;
@@ -550,15 +505,31 @@
                 f.currentX = currPos[0];
                 f.currentY = currPos[1];
 
-                if (selectedFlight && selectedFlight.id === f.id) {
-                    ctx.strokeStyle = isDark ? '#06B6D4' : '#0891B2';
-                    ctx.lineWidth = 2;
+                const shouldDrawLine = !isFocusMode || isSelected;
+                if (shouldDrawLine) {
+                    ctx.save();
+                    ctx.strokeStyle = isSelected ? '#C5A059' : (isDark ? 'rgba(197, 160, 89, 0.25)' : 'rgba(160, 130, 70, 0.35)');
+                    ctx.lineWidth = isSelected ? 1.8 : 1;
+                    ctx.setLineDash(isSelected ? [] : [3, 5]);
+
                     ctx.beginPath();
-                    ctx.arc(currPos[0], currPos[1], 14, 0, Math.PI * 2);
+                    ctx.moveTo(p0[0], p0[1]);
+                    ctx.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]);
                     ctx.stroke();
+                    ctx.restore();
                 }
 
-                drawAirplane(ctx, currPos[0], currPos[1], angle, selectedFlight && selectedFlight.id === f.id ? (isDark ? '#06B6D4' : '#0891B2') : (isDark ? '#FFFFFF' : '#0F172A'));
+                if (isSelected) {
+                    ctx.save();
+                    ctx.strokeStyle = '#C5A059';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(currPos[0], currPos[1], 11, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                drawAirplane(ctx, currPos[0], currPos[1], angle, isSelected, isDark);
             });
 
             if (isRunning) {
@@ -566,21 +537,19 @@
             }
         }
 
-        // Inspector Drawer Logic
-        const inspectorDrawer = document.getElementById('inspectorDrawer');
-        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
-
-        canvas.addEventListener('click', (e) => {
+        // Handle flight selection on tap or click
+        function handlePointerSelect(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const clickY = e.clientY - rect.top;
+            const clickX = clientX - rect.left;
+            const clickY = clientY - rect.top;
 
             let clickedTarget = null;
 
             flights.forEach(f => {
                 if (activeFilter !== 'all' && f.status !== activeFilter) return;
                 const dist = Math.hypot(clickX - f.currentX, clickY - f.currentY);
-                if (dist < 18) {
+                // Touch target radius tuned for mobile interactions
+                if (dist < 28) {
                     clickedTarget = f;
                 }
             });
@@ -594,13 +563,31 @@
             }
 
             if (!isRunning) render();
+        }
+
+        canvas.addEventListener('click', (e) => {
+            handlePointerSelect(e.clientX, e.clientY);
         });
 
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                const touch = e.touches[0];
+                handlePointerSelect(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
+
+        const inspectorDrawer = document.getElementById('inspectorDrawer');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+
+        // Populate drawer with selected flight data
         function openInspector(target) {
             document.getElementById('inspectCallsign').innerText = target.id;
-            document.getElementById('ticketCarrier').innerText = target.airline || 'EMIRATES AIRWAYS';
+
+            // Map airlines instead of raw country names
+            document.getElementById('ticketCarrier').innerText = target.airline || 'EMIRATES EXECUTIVE';
             document.getElementById('ticketAlt').innerText = target.alt || 'N/A';
             document.getElementById('ticketSpeed').innerText = target.speed || '0 kts';
+            document.getElementById('ticketStatusText').innerText = target.status || 'IN-FLIGHT';
 
             const airports = [
                 { code: 'LAX', city: 'Los Angeles' },
@@ -615,74 +602,97 @@
             const originIndex = Math.abs(target.id.charCodeAt(0) || 0) % airports.length;
             const destIndex = (originIndex + 1) % airports.length;
 
-            document.getElementById('ticketOriginCode').innerText = airports[originIndex].code;
-            document.getElementById('ticketOriginCity').innerText = airports[originIndex].city;
-            document.getElementById('ticketDestCode').innerText = airports[destIndex].code;
-            document.getElementById('ticketDestCity').innerText = airports[destIndex].city;
-            document.getElementById('ticketSquawk').innerText = `SQUAWK ${1000 + (Math.abs(target.id.charCodeAt(1) || 0) * 45) % 8999}`;
+            const originCode = airports[originIndex].code;
+            const destCode = airports[destIndex].code;
 
-            const statusText = document.getElementById('ticketStatusText');
-            if (target.status === 'On-Ground') {
-                statusText.innerText = 'ON-GROUND';
-                statusText.className = 'text-xs font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400';
-            } else {
-                statusText.innerText = 'IN-FLIGHT';
-                statusText.className = 'text-xs font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400';
+            document.getElementById('ticketOriginCode').innerText = originCode;
+            document.getElementById('ticketOriginCity').innerText = airports[originIndex].city;
+            document.getElementById('ticketDestCode').innerText = destCode;
+            document.getElementById('ticketDestCity').innerText = airports[destIndex].city;
+
+            const squawkVal = 1000 + (Math.abs(target.id.charCodeAt(1) || 0) * 45) % 8999;
+            document.getElementById('ticketSquawk').innerText = squawkVal;
+
+            const pnrChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let pnr = "";
+            for (let i = 0; i < 6; i++) {
+                pnr += pnrChars.charAt((target.id.charCodeAt(i % target.id.length) + i * 7) % pnrChars.length);
+            }
+            document.getElementById('ticketPnr').innerText = pnr;
+
+            const bcbpString = `M1TELEMETRY/FEED E${pnr} ${originCode}${destCode} ${target.id.substring(0, 6)}`;
+            document.getElementById('barcodeDataText').innerText = bcbpString;
+
+            // Render barcode with balanced dimensions
+            try {
+                JsBarcode("#barcodeCanvas", bcbpString, {
+                    format: "CODE128",
+                    displayValue: false,
+                    margin: 0,
+                    height: 32,
+                    width: 1.5,
+                    lineColor: "#1A1614"
+                });
+            } catch (err) {
+                console.error("Barcode rendering error:", err);
             }
 
             inspectorDrawer.classList.remove('hidden');
-            setTimeout(() => {
-                inspectorDrawer.classList.remove('opacity-0', 'translate-x-12');
-            }, 10);
         }
 
+        // Hide telemetry panel
         function closeInspector() {
-            inspectorDrawer.classList.add('opacity-0', 'translate-x-12');
-            setTimeout(() => {
-                inspectorDrawer.classList.add('hidden');
-            }, 300);
+            inspectorDrawer.classList.add('hidden');
         }
 
-        closeDrawerBtn.addEventListener('click', closeInspector);
+        closeDrawerBtn.addEventListener('click', () => {
+            selectedFlight = null;
+            closeInspector();
+            if (!isRunning) render();
+        });
 
-        // Filter Controls
+        // Filter button listeners
         const filterBtns = document.querySelectorAll('.filter-btn');
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => {
-                    b.classList.remove('bg-brand-cyan/20', 'border-brand-cyan/50', 'text-brand-cyan');
-                    b.classList.add('bg-slate-100', 'dark:bg-slate-900/60', 'border-slate-200', 'dark:border-slate-800/80', 'text-slate-600', 'dark:text-slate-400');
+                    b.classList.remove('bg-gold-500/15', 'border', 'border-gold-500/30', 'text-gold-600', 'dark:text-gold-400');
+                    b.classList.add('text-warm-800/70', 'dark:text-warm-100/60');
                 });
 
-                btn.classList.remove('bg-slate-100', 'dark:bg-slate-900/60', 'border-slate-200', 'dark:border-slate-800/80', 'text-slate-600', 'dark:text-slate-400');
-                btn.classList.add('bg-brand-cyan/20', 'border-brand-cyan/50', 'text-brand-cyan');
+                btn.classList.remove('text-warm-800/70', 'dark:text-warm-100/60');
+                btn.classList.add('bg-gold-500/15', 'border', 'border-gold-500/30', 'text-gold-600', 'dark:text-gold-400');
 
                 activeFilter = btn.getAttribute('data-filter');
                 if (!isRunning) render();
             });
         });
 
-        // Theme Switch
+        // Toggle dark and light mode
         const themeToggleBtn = document.getElementById('themeToggleBtn');
-        let isDark = false;
-
         themeToggleBtn.addEventListener('click', () => {
-            isDark = !isDark;
-            document.documentElement.classList.toggle('dark', isDark);
+            document.documentElement.classList.toggle('dark');
             if (!isRunning) render();
         });
 
-        // Simulation Pause/Play
+        // Pause animation loop
         const pauseToggleBtn = document.getElementById('pauseToggleBtn');
         pauseToggleBtn.addEventListener('click', () => {
             isRunning = !isRunning;
-            pauseToggleBtn.classList.toggle('text-brand-cyan', !isRunning);
+            pauseToggleBtn.classList.toggle('text-gold-500', !isRunning);
             if (isRunning) render();
+        });
+
+        // Toggle path focus mode
+        const focusModeBtn = document.getElementById('focusModeBtn');
+        focusModeBtn.addEventListener('click', () => {
+            isFocusMode = !isFocusMode;
+            focusModeBtn.classList.toggle('text-gold-500', isFocusMode);
+            if (!isRunning) render();
         });
 
         render();
     </script>
-
 </body>
 
 </html>

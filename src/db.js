@@ -1,3 +1,4 @@
+// db.js
 import pg from 'pg';
 import { config } from './config.js';
 
