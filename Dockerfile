@@ -1,14 +1,14 @@
-FROM node:20-alpine
+FROM node:20-alpine3.20
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy package files and install production dependencies only
+# Install production dependencies only using the modern npm flag
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
-# Copy source code
+# Copy application source code
 COPY src ./src
 
 EXPOSE 3000
