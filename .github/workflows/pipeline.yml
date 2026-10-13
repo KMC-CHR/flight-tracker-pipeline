@@ -10,12 +10,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   # ---------------------------------------------------------------------------
-  # 1. FAST LINTING CHECK
+  # COMBINED JOB 1 & 2: CODE QUALITY, SECURITY AUDIT & SECRET SCANNING
   # ---------------------------------------------------------------------------
-  quality-gate:
-    name: Code Quality (ESLint)
+  quality-and-security:
+    name: Code Quality & Security Gate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,39 +38,18 @@ jobs:
       - name: Run Linter
         run: npm run lint
 
-  # ---------------------------------------------------------------------------
-  # 2. LOCAL AI REVIEW (Runs on direct pushes to master)
-  # ---------------------------------------------------------------------------
-  ai-code-review:
-    name: Local SLM Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
+      - name: Dependency Security Audit
+        run: npm audit --audit-level=high
 
-      - name: Setup Node.js runtime
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install & Run Ollama
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sh
-          ollama serve &
-          sleep 4
-          ollama pull llama3.2:1b
-
-      - name: Execute SLM Diff Audit
-        run: node scripts/ai-audit.js
+      # Optional: Lightweight secret scanning without heavy runners
+      - name: Check for Leaked Secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
   # ---------------------------------------------------------------------------
-  # 3. INTEGRATION TESTS (Runs in parallel with AI Audit)
+  # JOB 3: INTEGRATION TESTS (Runs in Parallel with Quality & Security)
   # ---------------------------------------------------------------------------
   integration-tests:
     name: Integration Tests
@@ -105,11 +89,11 @@ jobs:
         run: npm run test:integration
 
   # ---------------------------------------------------------------------------
-  # 4. CONTAINER BUILD (Waits for quality gate, AI audit, and tests)
+  # JOB 4: CONTAINER BUILD (Gated by Quality/Security + Tests)
   # ---------------------------------------------------------------------------
   build-container:
     name: Build & Cache Docker Image
-    needs: [quality-gate, ai-code-review, integration-tests]
+    needs: [quality-and-security, integration-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -126,8 +110,3 @@ jobs:
           tags: app/backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
